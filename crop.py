@@ -37,19 +37,23 @@ def cropTopLeft(L, x, y):
     cropped = [[0 for _ in range(cols-x)] for _ in range(rows-y)]
     for r in range(len(cropped)):
         for c in range(len(cropped[0])):
-            cropped[r][c] = L[r+x][c+x]
+            cropped[r][c] = L[r+y][c+x]
     return cropped
 
-def cropBottomRight(self, x, y):
-    self.L = self.cropBottom(y)
-    self.L = self.cropRight(x)
-    return self.L
+def cropBottomRight(L, x, y):
+    rows = len(L)
+    cols = len(L[0])
+    cropped = [[0 for _ in range(cols-x)] for _ in range(rows-y)]
+    for r in range(len(cropped)):
+        for c in range(len(cropped[0])):
+            cropped[r][c] = L[r][c]
+    return cropped
 
-def cropBottomLeft(self, x, y):
-    self.L = self.cropBottom(y)
-    self.L = self.cropLeft(x)
-    return self.L
-
-A = [[1,2,3],
-     [4,5,6],
-     [7,8,9]]
+def cropBottomLeft(L, x, y):
+    rows = len(L)
+    cols = len(L[0])
+    cropped = [[0 for _ in range(cols-x)] for _ in range(rows-y)]
+    for r in range(len(cropped)):
+        for c in range(len(cropped[0])):
+            cropped[r][c] = L[r][c+x]
+    return cropped

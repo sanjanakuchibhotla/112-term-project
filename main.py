@@ -106,7 +106,7 @@ def userMode_keyPressed(app, event):
         app.im2 = arrToIm(rotated, app.im2)
     if event.key == 'b':
         imArr = getImArr(app.im2)
-        blurred = blur(imArr,5)
+        blurred = blur(imArr,3)
         app.im2 = Image.new(mode='RGB', size=(app.im2.size[0], app.im2.size[1]))
         app.im2 = arrToIm(blurred, app.im2)
     if event.key == 's':
