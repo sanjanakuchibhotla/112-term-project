@@ -3,6 +3,7 @@ from cmu_112_graphics import *
 from flip import *
 from rotate import *
 from blur import *
+from filters import *
 
 im = Image.open("dog.jpeg")
 im2 = Image.new(mode='RGB', size=im.size)
@@ -57,12 +58,17 @@ def drawTitle(app, canvas):
                        font=font, fill='black')
 
 def splashScreenMode_redrawAll(app, canvas):
+    canvas.create_rectangle(0,0,app.width,app.height,fill='paleturquoise1')
+    canvas.create_rectangle(app.margin, app.margin,
+                            app.width-app.margin, app.height-app.margin,
+                            outline='dodgerblue',width=10)
     drawTitle(app, canvas)
     drawClickHere(app, canvas)
 
 # -----------------------------------------------
 
 def appStarted(app):
+    app.margin = 10
     app.mode = 'splashScreenMode'
     app.im = app.loadImage('dog.jpeg')
     app.imWidth = app.im.size[0]
@@ -101,6 +107,26 @@ def userMode_keyPressed(app, event):
         sharpened = sharpen(imArr,3)
         app.im2 = Image.new(mode='RGB', size=(app.im2.size[0], app.im2.size[1]))
         app.im2 = arrToIm(sharpened, app.im2)
+    if event.key == 'p':
+        imArr = getImArr(app.im2)
+        filtered = redFilter(imArr,200)
+        app.im2 = Image.new(mode='RGB', size=(app.im2.size[0], app.im2.size[1]))
+        app.im2 = arrToIm(filtered, app.im2)
+    if event.key == 'j':
+        imArr = getImArr(app.im2)
+        filtered = greenFilter(imArr,200)
+        app.im2 = Image.new(mode='RGB', size=(app.im2.size[0], app.im2.size[1]))
+        app.im2 = arrToIm(filtered, app.im2)
+    if event.key == 'k':
+        imArr = getImArr(app.im2)
+        filtered = blueFilter(imArr,200)
+        app.im2 = Image.new(mode='RGB', size=(app.im2.size[0], app.im2.size[1]))
+        app.im2 = arrToIm(filtered, app.im2)
+    if event.key == 'o':
+        imArr = getImArr(app.im2)
+        filtered = BWFilter(imArr)
+        app.im2 = Image.new(mode='RGB', size=(app.im2.size[0], app.im2.size[1]))
+        app.im2 = arrToIm(filtered, app.im2)
 
 def userMode_mouseDragged(app, event):
     imArr = getImArr(app.im2)

@@ -56,11 +56,11 @@ def sharpen(arr, kernelSize):
                     n+dcol < 0 or n+dcol >= cols) or (drow == 0 and dcol == 0):
                         continue
                     (r1,g1,b1) = arr[m+drow][n+dcol]
-                    rSub += .25*r1
-                    gSub += .25*g1
-                    bSub += .25*b1
-            r = int(arr[m][n][0] - rSub)
-            g = int(arr[m][n][1] - gSub)
-            b = int(arr[m][n][2] - bSub)
+                    rSub += .6*r1
+                    gSub += .6*g1
+                    bSub += .6*b1
+            r = arr[m][n][0] - int(rSub/(kernelSize**2))
+            g = arr[m][n][1] - int(gSub/(kernelSize**2))
+            b = arr[m][n][2] - int(bSub/(kernelSize**2))
             arr[m][n] = (r, g, b)
     return arr
