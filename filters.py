@@ -36,6 +36,7 @@ def blueFilter(arr, level):
 
 # BLACK AND WHITE FILTER
 
+# grayscale conversion formula from https://tannerhelland.com/2011/10/01/grayscale-image-algorithm-vb6.html
 def BWFilter(arr):
     rows = len(arr)
     cols = len(arr[0])
@@ -43,6 +44,6 @@ def BWFilter(arr):
     for m in range(rows):
         for n in range(cols):
             r, g, b = arr[m][n]
-            gray = int((r + g  + b)/3)
+            gray = int(0.3*r + 0.59*g + 0.11*b)
             filtered[m][n] = (gray,gray,gray)
     return filtered

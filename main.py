@@ -51,17 +51,23 @@ def drawTitle(app, canvas):
     font = 'Times 36 bold italic'
     canvas.create_rectangle(app.width/3, app.height/5,
                             2*app.width/3, 7*app.height/15,
-                            outline='darkorchid2', width=5)
+                            outline='dark green', width=5)
+    canvas.create_rectangle(app.width/3-15, app.height/5-15,
+                            2*app.width/3+15, 7*app.height/15+15,
+                            outline='dark green', width=5)
     canvas.create_text(7*app.width/15, 4*app.height/15, text='Image',
-                       font=font, fill='black')
+                       font=font, fill='white')
     canvas.create_text(8*app.width/15, 6*app.height/15, text='Editor',
-                       font=font, fill='black')
+                       font=font, fill='white')
 
 def splashScreenMode_redrawAll(app, canvas):
-    canvas.create_rectangle(0,0,app.width,app.height,fill='paleturquoise1')
+    canvas.create_rectangle(0,0,app.width,app.height,fill='DarkOliveGreen4')
+    canvas.create_rectangle(30, 30, app.width-30, app.height-30, 
+                            outline='dark green', width=3)
     canvas.create_rectangle(app.margin, app.margin,
                             app.width-app.margin, app.height-app.margin,
-                            outline='dodgerblue',width=10)
+                            outline='dark green',width=10)
+    
     drawTitle(app, canvas)
     drawClickHere(app, canvas)
 
@@ -80,6 +86,7 @@ def appStarted(app):
             app.im2.putpixel((x,y),(r,g,b))
     app.im2Width = app.im2.size[0]
     app.im2Height = app.im2.size[1]
+    # app.flip = Button('flip', (app.width/3, app.height-10))
 
 def userMode_keyPressed(app, event):
     if event.key == 'f':
@@ -131,15 +138,14 @@ def userMode_keyPressed(app, event):
 def userMode_mouseDragged(app, event):
     imArr = getImArr(app.im2)
 
-
-
-# def drawButton(app, canvas, button):
-#     name = button.getName()
-#     (x,y) = button.getCenter()
-#     bWidth, bHeight = button.width, button.height
-#     canvas.create_rectangle(x - bWidth, y - bHeight,
-#                             x + bWidth, y + bHeight,
-#                             fill = 'gray')
+def drawButton(canvas, button):
+    name = button.getName()
+    (x,y) = button.getCenter()
+    bWidth, bHeight = button.width, button.height
+    canvas.create_rectangle(x - bWidth, y - bHeight,
+                            x + bWidth, y + bHeight,
+                            fill = 'gray')
+    canvas.create_text(x, y, text=name, font='Arial 10 bold', fill='black')
 
 def userMode_redrawAll(app, canvas):
     canvas.create_image(app.width/4, app.height/2, image=ImageTk.PhotoImage(app.im))
