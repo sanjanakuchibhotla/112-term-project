@@ -97,7 +97,7 @@ class SingleLayer():
         return self.layer
     
     def addToLayer(self, newIm):
-        self.layer.image = self.layer.image.paste(newIm.image, (0,0))
+        self.layer.mergeImage(newIm)
     
     def drawLayer(self, canvas):
         self.layer.drawImage(canvas)
@@ -153,7 +153,6 @@ class EditedImage():
         self.edits.append(edit)
     
     def mergeImage(self, other):
-        #newIm = self.image.paste(other.image, (int(other.cx), int(other.cy)))
         self.image.paste(other.image, (int(other.left), int(other.top)))
 
     def blur(self):
@@ -297,6 +296,10 @@ class EditedImage():
     #         for c in range(cols):
     #             (r1,g1,b1) = arr[r][c]
     #             self.image.putpixel((r,c),(r1,g1,b1))
+    def rotate(self):
+        im2 = self.makeCopy()
+        self.addEdit(im2)
+        self.image = self.image.transpose(Image.ROTATE_90)
 
 class Rectangle():
     def __init__(self, cx, cy, w, h):

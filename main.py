@@ -148,6 +148,9 @@ def userMode_mousePressed(app, event):
     if app.bw.clicked(event.x, event.y):
         app.currentImage.makeBW()
 
+    if app.rotate.clicked(event.x, event.y):
+        app.currentImage.rotate()
+
     if app.undo.clicked(event.x, event.y) and len(app.currentImage.edits) > 0:
         last = len(app.currentImage.edits) - 1
         app.currentImage.image = app.currentImage.edits.pop(last)
@@ -179,6 +182,8 @@ def userMode_mouseDragged(app, event):
     for slider in app.sliders:
         if slider.clicked(event.x, event.y) and slider.left < event.x < slider.right:
             slider.pos = event.x
+    
+    # recenter image if moved outside canvas bounds
     if app.moving and app.im.clicked(event.x, event.y):
         if app.margin < app.im.cx - app.im.width/2 and \
            app.margin < app.im.cy - app.im.height/2 and \
@@ -188,13 +193,15 @@ def userMode_mouseDragged(app, event):
         else:
             app.im.cx = app.width/3
             app.im.cy = 2.5*app.height/7
-
+    
+    # blur image if slider moved
     if app.blur.clicked(event.x, event.y):
         amount = (app.blur.getPos() - app.blur.left)/5
         app.currentImage.gaussianBlur(amount)
         # for _ in range(int(amount/2)):
         #     app.im.blur()
-
+    
+    # sharpen image if slider moved
     if app.sharp.clicked(event.x, event.y):
         amount = (app.sharp.getPos() - app.sharp.left)/10
         app.currentImage.sharpen(amount)
@@ -300,6 +307,18 @@ def drawAddLayer(app, canvas):
     #                         fill = 'black')
     canvas.create_text(cxBox, cyBox, text='Add', font = 'Helvetica 20 bold')
 
+def drawLayers(app, canvas):
+    numLayers = len(app.allLayers.layers)
+    xrightAddLayer = app.width/11 - app.margin + 70
+    yLayer = 11*app.height/14
+    for n in range(numLayers):
+        x0 = xrightAddLayer + n*50
+        y0 = yLayer
+        x1 = xrightAddLayer + (n+1)*50
+        y1 = yLayer + 50
+        canvas.create_rectangle(x0, y0, x1, y1, fill=None, outline='black', width=3)
+        canvas.create_text((x0+x1)/2, (y0+y1)/2, text=f'Layer {n+1}', font = 'Helvetica 10 bold')
+
 def addLayerClicked(app, x, y):
     boxleftx = app.width/11 - app.margin
     boxlefty = 11*app.height/14
@@ -328,6 +347,7 @@ def userMode_redrawAll(app, canvas):
     drawCanvas(app,canvas)
     drawLayerArea(app, canvas)
     drawAddLayer(app, canvas)
+    drawLayers(app, canvas)
     drawToolArea(app, canvas)
     for button in app.buttons:
         drawButton(canvas, button)
