@@ -12,25 +12,25 @@ from classes import *
  
 # dog image from google: https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.petfinder.com%2Fdog-breeds%2F&psig=AOvVaw3Fm5UKfPEVjxaWVddBDKIY&ust=1669057075474000&source=images&cd=vfe&ved=0CA8QjRxqFwoTCPDvvqS4vfsCFQAAAAAdAAAAABAD
 
-def getImArr(im):
-    im.convert('RGB')
-    rows = im.width
-    cols = im.height
-    imArr = [[0 for _ in range(cols)] for _ in range(rows)]
-    for x in range(im.width):
-        for y in range(im.height):
-            r,g,b = im.getpixel((x,y))
-            imArr[x][y] = (r,g,b)
-    return imArr
+# def getImArr(im):
+#     im.convert('RGB')
+#     rows = im.width
+#     cols = im.height
+#     imArr = [[0 for _ in range(cols)] for _ in range(rows)]
+#     for x in range(im.width):
+#         for y in range(im.height):
+#             r,g,b = im.getpixel((x,y))
+#             imArr[x][y] = (r,g,b)
+#     return imArr
 
-def arrToIm(arr, im2):
-    rows = len(arr)
-    cols = len(arr[0])
-    for x in range(rows):
-        for y in range(cols):
-            (r,g,b) = arr[x][y]
-            im2.putpixel((x,y),(r,g,b))
-    return im2
+# def arrToIm(arr, im2):
+#     rows = len(arr)
+#     cols = len(arr[0])
+#     for x in range(rows):
+#         for y in range(cols):
+#             (r,g,b) = arr[x][y]
+#             im2.putpixel((x,y),(r,g,b))
+#     return im2
 
 # --------------- SPLASH SCREEN -----------------
 
@@ -99,7 +99,11 @@ def appStarted(app):
     app.moving = False
     app.scaling = False
     app.isBW = False
+
+    # RED
     app.increasingRed = False
+    app.decreasingRed = False
+
     app.increasingGreen = False
     app.increasingBlue = False
 
@@ -120,6 +124,9 @@ def appStarted(app):
     app.green = Slider('green', (5*app.width/6, 12*app.height/36), 'green')
     app.blue = Slider('blue', (5*app.width/6, 13*app.height/36), 'blue')
     app.sliders = [app.blur, app.sharp, app.red, app.green, app.blue]
+
+    # POSITIONS
+    app.redPos = app.red.getPos()
 
 def userMode_keyPressed(app, event):
     if event.key == 'u':
@@ -163,9 +170,16 @@ def userMode_mouseReleased(app, event):
             button.color = 'dodgerblue'
     
     if app.increasingRed:
+        app.redPos = app.red.getPos()
         amount = (app.red.getPos() - app.red.left)/3
         app.currentImage.increaseRed(int(amount))
         app.increasingRed = False
+
+    if app.decreasingRed:
+        app.redPos = app.red.getPos()
+        amount = (app.red.getPos() - app.red.left)/3
+        app.currentImage.decreaseRed(int(amount))
+        app.decreasingRed = False
 
     if app.increasingGreen:
         amount = (app.green.getPos() - app.green.left)/3
@@ -208,7 +222,10 @@ def userMode_mouseDragged(app, event):
 
     # SLIDERS FOR COLORS
     if app.red.clicked(event.x,event.y) and app.red.movingRight(event.x):
-        app.increasingRed = True
+        if event.x > app.redPos:
+            app.increasingRed = True
+        else:
+            app.decreasingRed = True
 
     if app.green.clicked(event.x,event.y):
         app.increasingGreen = True
@@ -298,7 +315,7 @@ def drawAddLayer(app, canvas):
     plusH = size/3.5
     canvas.create_rectangle(boxleftx, boxlefty,
                             boxleftx + size, boxlefty + size,fill=None,
-                            outline='black', width=3)
+                            outline='black', width=3, activefill='gray')
     # canvas.create_rectangle(cxBox - plusW/2, cyBox - plusH/2,
     #                         cxBox + plusW/2, cyBox + plusH/2,
     #                         fill = 'black')

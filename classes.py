@@ -107,12 +107,15 @@ class EditedImage():
         self.image = image
         self.width = image.size[0]
         self.height = image.size[1]
+
         self.cx = center[0]
         self.left = self.cx - self.width/2
         self.right = self.cx + self.width/2
+
         self.cy = center[1]
         self.top = self.cy - self.height/2
         self.bottom = self.cy + self.height/2
+
         self.edits = []
         self.undone = []
 
@@ -266,7 +269,8 @@ class EditedImage():
                 (r1,g1,b1) = arr[r][c]
                 b2 = max(b1 - amount, 0)
                 self.image.putpixel((r,c),(r1,g1,b2))
-        
+    
+    # grayscale conversion formula from https://tannerhelland.com/2011/10/01/grayscale-image-algorithm-vb6.html
     def makeBW(self):
         im2 = self.makeCopy()
         self.addEdit(im2)
