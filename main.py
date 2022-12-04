@@ -1,7 +1,7 @@
-# -----------------------
-# | SANJANA KUCHIBHOTLA |
-# | 15-112 TERM PROJECT |
-# -----------------------
+# ----------------------- #
+# | SANJANA KUCHIBHOTLA | #
+# | 15-112 TERM PROJECT | #
+# ----------------------- #
 
 from cmu_112_graphics import *
 from flip import *
@@ -143,9 +143,8 @@ def appStarted(app):
     app.bw = Button('b+w', (5*app.width/6,1.75*app.height/8), 'dodgerblue', 'dodgerblue')
     app.undo = Button('undo', (2*app.width/3 + 60, app.margin + 20), 'dodgerblue', 'dodgerblue')
     app.fill = Button('fill', (5*app.width/6, 2*app.height/8), 'dodgerblue', 'dodgerblue')
-    app.addImage = Button('open', (18*app.width/19, app.margin + 50), 'dodgerblue', 'dodgerblue')
-    app.sim = Button('similarity', (5*app.width/6, 7*app.height/8), 'dodgerblue', 'dodgerblue')
-    app.buttons = [app.flipH, app.flipV, app.rotate, app.move, app.bw, app.undo, app.save, app.fill, app.addImage]
+    app.sim = Button('similarity', (5*app.width/6, 5*app.height/8), 'dodgerblue', 'dodgerblue')
+    app.buttons = [app.flipH, app.flipV, app.rotate, app.move, app.bw, app.undo, app.save, app.fill]
 
     # USER MODE SLIDERS
     app.blur = Slider('blur', (5*app.width/6, 16*app.height/36), 'black')
@@ -177,7 +176,10 @@ def userMode_timerFired(app):
 
 def userMode_mousePressed(app, event):
     if app.save.clicked(event.x,event.y):
-        app.currentImage.image.save('tpfile.jpeg',format='jpeg')
+        app.finalImage = app.layers.layers[0].makeCopy()
+        for im in app.layers.layers[1:]:
+            app.finalImage.paste(im.image, (int(im.left), int(im.top)))
+        app.finalImage.save('tpfile.jpeg',format='jpeg')
 
     for button in app.buttons:
         if button.clicked(event.x, event.y):
@@ -229,15 +231,6 @@ def userMode_mousePressed(app, event):
         print(f'layer {idx} clicked')
         app.changingLayer = True
         app.currentImage = app.layers.layers[idx-1]
-    
-    if app.addImage.clicked(event.x, event.y):
-        userInput = app.getUserInput('Add an image:')
-        try:
-            im = app.loadImage(userInput)
-            eIm = EditedImage(im, (app.cxCanvas, app.cyCanvas))
-            app.currentLayer.addToLayer(eIm)
-        except:
-            pass
 
 def userMode_mouseReleased(app, event):
     for button in app.buttons:
@@ -264,6 +257,17 @@ def userMode_mouseReleased(app, event):
                 app.fillcolor = (r,g,b)
             except:
                 pass
+    
+    if app.filling and app.sim.clicked(event.x, event.y):
+        val = app.getUserInput('enter value between 10 and 70:')
+        try:
+            val = int(val)
+            while not (10 <= val <= 70):
+                val = app.getUserInput('enter value between 10 and 70:')
+                val = int(val)
+            app.similarityVal = val
+        except:
+            pass
     
     # increases the red value if red slider moved right
     if app.increasingRed:
@@ -525,6 +529,8 @@ def userMode_redrawAll(app, canvas):
     drawFillColor(app, canvas)
     for button in app.buttons:
         drawButton(canvas, button)
+    if app.filling:
+        drawButton(canvas, app.sim)
     for slider in app.sliders:
         drawSlider(canvas, slider)
     for layer in app.layers.layers:

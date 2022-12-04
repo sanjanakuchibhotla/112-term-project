@@ -1,20 +1,20 @@
 import math
 
-def floodfillOld(arr, startRow, startCol, new):
-    old = arr[startRow][startCol]
-    arr[startRow][startCol] = new
-    floodfillHelp(arr, startRow, startCol, old, new)
-    return arr
+# def floodfillOld(arr, startRow, startCol, new):
+#     old = arr[startRow][startCol]
+#     arr[startRow][startCol] = new
+#     floodfillHelp(arr, startRow, startCol, old, new)
+#     return arr
 
-def floodfillHelp(arr, startRow, startCol, old, new):
-    arr[startRow][startCol] = new
-    for drow,dcol in [(-1,0),(1,0),(0,-1),(0,1)]:
-        newRow = startRow + drow
-        newCol = startCol + dcol
-        if not onBoard(arr, newRow, newCol) or arr[newRow][newCol] == new:
-            continue
-        if similarPixelValue(arr[newRow][newCol], old):
-            floodfillHelp(arr, newRow, newCol, old, new)
+# def floodfillHelp(arr, startRow, startCol, old, new):
+#     arr[startRow][startCol] = new
+#     for drow,dcol in [(-1,0),(1,0),(0,-1),(0,1)]:
+#         newRow = startRow + drow
+#         newCol = startCol + dcol
+#         if not onBoard(arr, newRow, newCol) or arr[newRow][newCol] == new:
+#             continue
+#         if similarPixelValue(arr[newRow][newCol], old):
+#             floodfillHelp(arr, newRow, newCol, old, new)
 
 def floodfill(arr, startRow, startCol, new, similarityVal):
     possible = []
@@ -26,12 +26,12 @@ def floodfill(arr, startRow, startCol, new, similarityVal):
         currValue = possible.pop(0)
         arr[currValue[0]][currValue[1]] = new
         for drow, dcol in [(-1,0),(1,0),(0,-1),(0,1)]:
-            newValue = (currValue[0] + drow, currValue[1] + dcol)
-            if onBoard(arr, newValue[0], newValue[1]) and \
-               similarPixelValue(arr[newValue[0]][newValue[1]], old, similarityVal) and \
-               newValue not in seen:
-                seen.add(newValue)
-                possible.append(newValue)
+            nextPos = (currValue[0] + drow, currValue[1] + dcol)
+            if onBoard(arr, nextPos[0], nextPos[1]) and \
+               similarPixelValue(arr[nextPos[0]][nextPos[1]], old, similarityVal) and \
+               nextPos not in seen:
+                seen.add(nextPos)
+                possible.append(nextPos)
     return arr
 
 def similarPixelValue(p1,p2,similarityVal):
