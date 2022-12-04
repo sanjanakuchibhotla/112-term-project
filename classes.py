@@ -1,14 +1,16 @@
 from PIL import Image
 from PIL import ImageFilter
+from floodfill import *
 from cmu_112_graphics import *
 
 class Button():
-    def __init__(self, name, center, color):
+    def __init__(self, name, center, currColor, changeColor):
         self.name = name
-        self.w = 40
+        self.w = 60
         self.h = 20
         self.c = center
-        self.color = color
+        self.color = currColor
+        self.activecolor = changeColor
 
     def getName(self):
         return self.name
@@ -56,8 +58,15 @@ class Slider():
     def getColor(self):
         return self.color
     
+    def getColorAmount(self,dx):
+        amount = (dx/self.w)*255
+        return amount
+    
     def setSliderPos(self, newPos):
         self.pos = newPos
+    
+    def reset(self):
+        self.pos = self.left
     
     def clicked(self, x, y):
         return self.pos - self.r - 5 < x < self.pos + self.r + 5 and \
@@ -89,24 +98,30 @@ class Layers():
         layer = self.hiddenLayers[idx]
         self.layers.insert(idx, layer)
 
-class SingleLayer():
-    def __init__(self, layer):
-        self.layer = layer
+# class SingleLayer():
+#     def __init__(self, layer):
+#         self.layer = layer
     
-    def getImage(self):
-        return self.layer
+#     def getImage(self):
+#         return self.layer
     
-    def addToLayer(self, newIm):
-        self.layer.mergeImage(newIm)
+#     def addToLayer(self, newIm):
+#         self.layer.mergeImage(newIm)
     
-    def drawLayer(self, canvas):
-        self.layer.drawImage(canvas)
+#     def drawLayer(self, canvas):
+#         self.layer.drawImage(canvas)
 
 class EditedImage():
     def __init__(self, image, center):
         self.image = image
         self.width = image.size[0]
         self.height = image.size[1]
+
+        self.ogCopy = self.makeCopy()
+
+        self.redAdded = 0
+        self.greenAdded = 0
+        self.blueAdded = 0
 
         self.cx = center[0]
         self.left = self.cx - self.width/2
@@ -117,7 +132,6 @@ class EditedImage():
         self.bottom = self.cy + self.height/2
 
         self.edits = []
-        self.undone = []
 
     def getImArr(self):
         im = self.image
@@ -143,6 +157,14 @@ class EditedImage():
         self.addEdit(im2)
         self.cx = x
         self.cy = y
+    
+    def xCanvasToImage(self, x):
+        xImage = x - self.left
+        return xImage
+    
+    def yCanvasToImage(self, y):
+        yImage = y - self.top
+        return yImage
     
     def makeCopy(self):
         im2 = Image.new(mode='RGB', size=self.image.size)
@@ -196,7 +218,7 @@ class EditedImage():
     def sharpen(self, amount):
         im2 = self.makeCopy()
         self.addEdit(im2)
-        self.image = self.image.filter(ImageFilter.UnsharpMask(amount,100,3))
+        self.image = self.image.filter(ImageFilter.UnsharpMask(amount,50,3))
     
     def increaseRed(self, amount):
         im2 = self.makeCopy()
@@ -243,7 +265,8 @@ class EditedImage():
         for r in range(rows):
             for c in range(cols):
                 (r1,g1,b1) = arr[r][c]
-                r2 = max(r1 - amount, 0)
+                minR = self.ogCopy.getpixel((r,c))[0]
+                r2 = max(r1 - amount, minR)
                 self.image.putpixel((r,c),(r2,g1,b1))
 
     def decreaseGreen(self, amount):
@@ -283,6 +306,20 @@ class EditedImage():
                 gray = int(0.3*r1 + 0.59*g1 + 0.11*b1)
                 self.image.putpixel((r,c),(gray,gray,gray))
     
+    def fill(self, color, xClicked, yClicked):
+        im2 = self.makeCopy()
+        self.addEdit(im2)
+        arr = self.getImArr()
+        xClicked = int(self.xCanvasToImage(xClicked))
+        yClicked = int(self.yCanvasToImage(yClicked))
+        arr = floodfill(arr, xClicked, yClicked, color)
+        rows = len(arr)
+        cols = len(arr[0])
+        for r in range(rows):
+            for c in range(cols):
+                (r1,g1,b1) = arr[r][c]
+                self.image.putpixel((r,c),(r1,g1,b1))
+    
     def flipH(self):
         im2 = self.makeCopy()
         self.addEdit(im2)
@@ -304,17 +341,3 @@ class EditedImage():
         im2 = self.makeCopy()
         self.addEdit(im2)
         self.image = self.image.transpose(Image.ROTATE_90)
-
-class Rectangle():
-    def __init__(self, cx, cy, w, h):
-        self.cx = cx
-        self.cy = cy
-        self.w = w
-        self.h = h
-    
-    def getBounds(self):
-        x0 = self.cx - self.w/2
-        x1 = self.cx + self.w/2
-        y0 = self.cy - self.h/2
-        y1 = self.cy + self.h/2
-        return x0, y0, x1, y1

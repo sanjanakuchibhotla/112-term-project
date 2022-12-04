@@ -9,30 +9,13 @@ from cmu_112_graphics import *
 from flip import *
 from rotate import *
 from classes import *
+from floodfill import *
  
 # dog image from google: https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.petfinder.com%2Fdog-breeds%2F&psig=AOvVaw3Fm5UKfPEVjxaWVddBDKIY&ust=1669057075474000&source=images&cd=vfe&ved=0CA8QjRxqFwoTCPDvvqS4vfsCFQAAAAAdAAAAABAD
 
-# def getImArr(im):
-#     im.convert('RGB')
-#     rows = im.width
-#     cols = im.height
-#     imArr = [[0 for _ in range(cols)] for _ in range(rows)]
-#     for x in range(im.width):
-#         for y in range(im.height):
-#             r,g,b = im.getpixel((x,y))
-#             imArr[x][y] = (r,g,b)
-#     return imArr
-
-# def arrToIm(arr, im2):
-#     rows = len(arr)
-#     cols = len(arr[0])
-#     for x in range(rows):
-#         for y in range(cols):
-#             (r,g,b) = arr[x][y]
-#             im2.putpixel((x,y),(r,g,b))
-#     return im2
-
-# --------------- SPLASH SCREEN -----------------
+# ############################################### #
+# --------------- SPLASH SCREEN ----------------- #
+# ############################################### #
 
 def splashScreenMode_keyPressed(app, event):
     if event.key=='Space':
@@ -75,6 +58,27 @@ def splashScreenMode_redrawAll(app, canvas):
     drawTitle(app, canvas)
     drawClickHere(app, canvas)
 
+# ----------- START MODE --------------
+
+def drawOpenButton(app, canvas):
+    cx, cy = app.width/2, app.height/2
+    canvas.create_rectangle(cx - 50, cy - 20, cx + 50, cy + 20, fill='lightgray',
+                  activefill='gray')
+    canvas.create_text(cx, cy, text='Pick image', font='Helvetica 15 bold')
+
+def openButtonClicked(app, x, y):
+    cx, cy = app.width/2, app.height/2
+    return cx - 50 <= x <= cx + 50 and cy - 20 <= y <= cy + 20
+
+def startMode_mousePressed(app, event):
+    if openButtonClicked(app, event.x, event.y):
+        userInput = app.getUserInput('Open Image:')
+        app.im = EditedImage(app.loadImage(userInput), (app.cxCanvas, app.cyCanvas))
+        app.mode = 'userMode'
+
+def startMode_redrawAll(app, canvas):
+    drawOpenButton(app, canvas)
+
 # ----------- USER MODE --------------
 
 def appStarted(app):
@@ -82,23 +86,26 @@ def appStarted(app):
     app.mode = 'splashScreenMode'
     app.cxCanvas = app.width/3
     app.cyCanvas = 5*app.height/14
+    # app.firstUserInput = app.getUserInput('Open Image:')
     app.im = EditedImage(app.loadImage('dog.jpeg'), (app.cxCanvas, app.cyCanvas))
-    app.im2 = EditedImage(app.loadImage('image2.jpeg'), (app.cxCanvas+100, app.cyCanvas))
     app.imWidth = app.im.width
     app.imHeight = app.im.height
 
+    # FINAL IMAGE
+    app.finalImage = app.im.makeCopy()
+
     # LAYERS
-    app.im.mergeImage(app.im2)
-    app.layer1 = SingleLayer(app.im)
-    # app.layer1.addToLayer(app.im2)
-    app.allLayers = Layers([app.layer1])
-    app.currentLayer = app.allLayers.layers[0]
-    app.currentImage = app.currentLayer.layer
+    #app.im.mergeImage(app.im2)
+    #app.layer = SingleLayer(app.im)
+    app.layers = Layers([app.im])
+    app.currentImage = app.layers.layers[len(app.layers.layers)-1]
+    # app.currentImage = app.currentLayer
 
     # STATES
     app.moving = False
     app.scaling = False
     app.isBW = False
+    app.filling = False
 
     # RED
     app.increasingRed = False
@@ -107,18 +114,23 @@ def appStarted(app):
     app.increasingGreen = False
     app.increasingBlue = False
 
+    # FLOODFILL
+    app.fillcolor = (0,0,0)
+
     # USER MODE BUTTONS
-    app.flip = Button('flip', (5*app.width/6, app.height/8), 'dodgerblue')
-    app.rotate = Button('rotate', (5*app.width/6, 1.5*app.height/8), 'dodgerblue')
-    app.save = Button('save', (app.margin + 25, app.margin + 20),'dodgerblue')
-    app.scale = Button('scale', (5*app.width/6, 0.75*app.height/8), 'dodgerblue')
-    app.move = Button('move', (5*app.width/6, 0.5*app.height/8), 'dodgerblue')
-    app.bw = Button('b+w', (5*app.width/6,1.75*app.height/8), 'dodgerblue')
-    app.undo = Button('undo', (4.5*app.width/6,app.height/8), 'dodgerblue')
-    app.buttons = [app.flip, app.rotate, app.scale, app.move, app.bw, app.undo, app.save]
+    app.flip = Button('flip', (5*app.width/6, app.height/8), 'dodgerblue', 'dodgerblue')
+    app.rotate = Button('rotate', (5*app.width/6, 1.5*app.height/8), 'dodgerblue', 'dodgerblue')
+    app.save = Button('save', (18*app.width/19, app.margin + 20),'dodgerblue', 'dodgerblue')
+    app.scale = Button('scale', (5*app.width/6, 0.75*app.height/8), 'dodgerblue', 'dodgerblue')
+    app.move = Button('move', (5*app.width/6, 0.5*app.height/8), 'dodgerblue', 'dodgerblue')
+    app.bw = Button('b+w', (5*app.width/6,1.75*app.height/8), 'dodgerblue', 'dodgerblue')
+    app.undo = Button('undo', (2*app.width/3 + 40, app.margin + 20), 'dodgerblue', 'dodgerblue')
+    app.fill = Button('fill', (5*app.width/6, 2*app.height/8), 'dodgerblue', 'dodgerblue')
+    app.addImage = Button('open', (18*app.width/19, app.margin + 50), 'dodgerblue', 'dodgerblue')
+    app.buttons = [app.flip, app.rotate, app.scale, app.move, app.bw, app.undo, app.save, app.fill, app.addImage]
 
     # USER MODE SLIDERS
-    app.blur = Slider('blur', (5*app.width/6, 9*app.height/36), 'black')
+    app.blur = Slider('blur', (5*app.width/6, 16*app.height/36), 'black')
     app.sharp = Slider('sharpen', (5*app.width/6, 15*app.height/36), 'black')
     app.red = Slider('red', (5*app.width/6, 11*app.height/36), 'red')
     app.green = Slider('green', (5*app.width/6, 12*app.height/36), 'green')
@@ -126,17 +138,14 @@ def appStarted(app):
     app.sliders = [app.blur, app.sharp, app.red, app.green, app.blue]
 
     # POSITIONS
-    app.redPos = app.red.getPos()
+    app.startRed = app.red.left
+    app.endRed = app.red.getPos()
 
 def userMode_keyPressed(app, event):
     if event.key == 'u':
         if len(app.im.edits) > 0:
             last = len(app.im.edits) - 1
             app.im.image = app.im.edits.pop(last)
-    if event.key == 'r':
-        pass
-    if event.key == 's':
-        pass
 
 def userMode_mousePressed(app, event):
     if app.save.clicked(event.x,event.y):
@@ -163,21 +172,63 @@ def userMode_mousePressed(app, event):
         app.currentImage.image = app.currentImage.edits.pop(last)
     # if app.rotate.clicked:
     #     app.im.image = app.im.rotate90()
+    
+    if app.filling:
+        if (app.currentImage.right >= event.x >= app.currentImage.left and \
+            app.currentImage.top <= event.y <= app.currentImage.bottom):
+            try:
+                app.currentImage.fill(app.fillcolor, event.x, event.y)
+            except:
+                pass
+    
+    if addLayerClicked(app, event.x, event.y):
+        userInput = app.getUserInput('Add a layer:')
+        im = app.loadImage(userInput)
+        eIm = EditedImage(im, (app.cxCanvas, app.cyCanvas))
+        app.layers.addLayer(eIm)
+        app.currentImage = app.layers.layers[-1]
+        for slider in app.sliders:
+            slider.reset()
+        #app.im.mergeImage(EditedImage(im, (app.cxCanvas, app.cyCanvas)))
+    
+    if app.addImage.clicked(event.x, event.y):
+        userInput = app.getUserInput('Add an image:')
+        try:
+            im = app.loadImage(userInput)
+            eIm = EditedImage(im, (app.cxCanvas, app.cyCanvas))
+            app.currentLayer.addToLayer(eIm)
+        except:
+            pass
 
 def userMode_mouseReleased(app, event):
     for button in app.buttons:
         if button.clicked(event.x, event.y):
-            button.color = 'dodgerblue'
+            button.color = button.activecolor
+    
+    if app.fill.clicked(event.x, event.y):
+        app.filling = not app.filling
+        if app.filling:
+            color = app.getUserInput('input rgb value in the form (r,g,b):')
+            color = color[1:-1]
+            rgbVals = color.split(',')
+            r,g,b = int(rgbVals[0]),int(rgbVals[1]),int(rgbVals[2])
+            while not ((0 <= r <= 255) and (0 <= g <= 255) and (0 <= b <= 255)):
+                color = app.getUserInput('input rgb value in the form (r,g,b):')
+                color = color[1:-1]
+                rgbVals = color.split(',')
+                r,g,b = int(rgbVals[0]),int(rgbVals[1]),int(rgbVals[2])
+            app.fillcolor = (r,g,b)
     
     if app.increasingRed:
-        app.redPos = app.red.getPos()
-        amount = (app.red.getPos() - app.red.left)/3
+        dx = app.endRed - app.startRed
+        amount = app.red.getColorAmount(dx)
         app.currentImage.increaseRed(int(amount))
+        app.startRed = app.endRed
         app.increasingRed = False
 
     if app.decreasingRed:
-        app.redPos = app.red.getPos()
-        amount = (app.red.getPos() - app.red.left)/3
+        dx = app.endRed - app.startRed
+        amount = abs(app.red.getColorAmount(dx))
         app.currentImage.decreaseRed(int(amount))
         app.decreasingRed = False
 
@@ -198,15 +249,15 @@ def userMode_mouseDragged(app, event):
             slider.pos = event.x
     
     # recenter image if moved outside canvas bounds
-    if app.moving and app.im.clicked(event.x, event.y):
-        if app.margin < app.im.cx - app.im.width/2 and \
-           app.margin < app.im.cy - app.im.height/2 and \
-           app.im.cx + app.im.width/2 < 2*app.width/3 and \
-           app.im.cy + app.im.height/2 < 5*app.height/7:
-           app.im.changeCenter(event.x, event.y)
+    if app.moving and app.currentImage.clicked(event.x, event.y):
+        if app.margin < app.currentImage.cx - app.currentImage.width/2 and \
+           app.margin < app.currentImage.cy - app.currentImage.height/2 and \
+           app.currentImage.cx + app.im.width/2 < 2*app.width/3 and \
+           app.currentImage.cy + app.im.height/2 < 5*app.height/7:
+           app.currentImage.changeCenter(event.x, event.y)
         else:
-            app.im.cx = app.width/3
-            app.im.cy = 2.5*app.height/7
+            app.currentImage.cx = app.width/3
+            app.currentImage.cy = 2.5*app.height/7
     
     # blur image if slider moved
     if app.blur.clicked(event.x, event.y):
@@ -221,10 +272,14 @@ def userMode_mouseDragged(app, event):
         app.currentImage.sharpen(amount)
 
     # SLIDERS FOR COLORS
-    if app.red.clicked(event.x,event.y) and app.red.movingRight(event.x):
-        if event.x > app.redPos:
+    if app.red.clicked(event.x,event.y):
+        app.endRed = event.x
+        print(app.startRed, app.endRed)
+        if app.endRed > app.startRed:
+            print('moving right!')
             app.increasingRed = True
         else:
+            print('moving left!')
             app.decreasingRed = True
 
     if app.green.clicked(event.x,event.y):
@@ -233,8 +288,8 @@ def userMode_mouseDragged(app, event):
     if app.blue.clicked(event.x,event.y):
         app.increasingBlue = True
 
-def drawSingleLayer(singleLayer, canvas):
-    singleLayer.drawLayer(canvas)
+# def drawSingleLayer(singleLayer, canvas):
+#     singleLayer.drawLayer(canvas)
 
 def drawBackground(app, canvas):
     canvas.create_rectangle(0,0,app.width,app.height,fill='black')
@@ -248,8 +303,10 @@ def drawButton(canvas, button):
     name = button.getName()
     (x,y) = button.getCenter()
     bWidth, bHeight = button.w/2, button.h/2
+    buttonLeft = x - bWidth
+    buttonRight = x + bWidth
     color = button.getColor()
-    r = 10
+    r = bHeight
     cx1, cy1 = x - bWidth + r, y - bHeight + r
     cx2, cy2 = x - bWidth + r, y + bHeight - r
     cx3, cy3 = x + bWidth - r, y - bHeight + r
@@ -272,7 +329,7 @@ def drawButton(canvas, button):
                       start = 0, extent = -90)
     canvas.create_line(x - r, y - r, x + r, y - r, fill = color)
     canvas.create_line(x - r, y + r, x + r, y + r, fill = color)
-    canvas.create_rectangle(x - r, y - r, x + r, y + r,
+    canvas.create_rectangle(buttonLeft + r, y - r, buttonRight - r, y + r,
                             fill=color, outline=color)
     canvas.create_oval(cx1 - r, cy1 - r, cx1 + r, cy1 + r,
                        fill=color, outline=color)
@@ -295,6 +352,18 @@ def drawSlider(canvas, slider):
     canvas.create_oval(pos - r, y - r,
                        pos + r, y + r, fill = color)
 
+# given r,g,b values, returns hex value (from https://www.cs.cmu.edu/~112/notes/notes-graphics.html#customColors)
+def rgbString(r,g,b):
+    return f'#{r:02x}{g:02x}{b:02x}'
+
+# draws current fill color
+def drawFillColor(app, canvas):
+    (r,g,b) = app.fillcolor
+    color = rgbString(r,g,b)
+    canvas.create_rectangle(5*app.width/6 + 50, 2*app.height/8 - 10,
+                            5*app.width/6 + 70, 2*app.height/8 + 10,
+                            fill=color, outline='black')
+
 def drawLayerArea(app, canvas):
     canvas.create_rectangle(app.margin, 5*app.height/7,
                             2*app.width/3-app.margin, app.height-app.margin,
@@ -311,21 +380,13 @@ def drawAddLayer(app, canvas):
     size = 50
     cxBox = boxleftx + size/2
     cyBox = boxlefty + size/2
-    plusW = 5*size/6
-    plusH = size/3.5
     canvas.create_rectangle(boxleftx, boxlefty,
-                            boxleftx + size, boxlefty + size,fill=None,
+                            boxleftx + size, boxlefty + size,fill='lightgray',
                             outline='black', width=3, activefill='gray')
-    # canvas.create_rectangle(cxBox - plusW/2, cyBox - plusH/2,
-    #                         cxBox + plusW/2, cyBox + plusH/2,
-    #                         fill = 'black')
-    # canvas.create_rectangle(cxBox - plusH/2, cyBox - plusW/2,
-    #                         cxBox + plusH/2, cyBox + plusW/2,
-    #                         fill = 'black')
     canvas.create_text(cxBox, cyBox, text='Add', font = 'Helvetica 20 bold')
 
 def drawLayers(app, canvas):
-    numLayers = len(app.allLayers.layers)
+    numLayers = len(app.layers.layers)
     xrightAddLayer = app.width/11 - app.margin + 70
     yLayer = 11*app.height/14
     for n in range(numLayers):
@@ -366,15 +427,13 @@ def userMode_redrawAll(app, canvas):
     drawAddLayer(app, canvas)
     drawLayers(app, canvas)
     drawToolArea(app, canvas)
+    drawFillColor(app, canvas)
     for button in app.buttons:
         drawButton(canvas, button)
     for slider in app.sliders:
         drawSlider(canvas, slider)
-    for layer in app.allLayers.layers:
-        drawSingleLayer(layer, canvas)
-
-    
-    #canvas.create_image(app.im.cx, app.im.cy, image=ImageTk.PhotoImage(app.im.image))
+    for layer in app.layers.layers:
+        layer.drawImage(canvas)
 
 width = 1200
 height = 800
