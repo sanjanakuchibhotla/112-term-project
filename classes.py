@@ -1,12 +1,13 @@
 from PIL import Image
 from PIL import ImageFilter
 from floodfill import *
+from flip import *
 from cmu_112_graphics import *
 
 class Button():
     def __init__(self, name, center, currColor, changeColor):
         self.name = name
-        self.w = 60
+        self.w = 80
         self.h = 20
         self.c = center
         self.color = currColor
@@ -82,7 +83,8 @@ class Layers():
     def __init__(self,layers):
         self.layers = layers
         self.hiddenLayers = dict()
-        self.currentLayer = self.layers[-1]
+        if len(self.layers) > 0:
+            self.currentLayer = self.layers[-1]
 
     def getLayer(self, idx):
         return self.layers[idx]
@@ -157,6 +159,10 @@ class EditedImage():
         self.addEdit(im2)
         self.cx = x
         self.cy = y
+        self.left = x - self.width/2
+        self.top = y - self.height/2
+        self.right = x + self.width/2
+        self.bottom = y + self.height/2
     
     def xCanvasToImage(self, x):
         xImage = x - self.left
@@ -180,35 +186,35 @@ class EditedImage():
     def mergeImage(self, other):
         self.image.paste(other.image, (int(other.left), int(other.top)))
 
-    def blur(self):
-        arr = self.getImArr()
-        rows = len(arr)
-        cols = len(arr[0])
-        drows = list(range(-3//2+1, 3//2+1))
-        dcols = list(range(-3//2+1, 3//2+1))
-        for m in range(rows):
-            for n in range(cols):
-                rSum = 0
-                gSum = 0
-                bSum = 0
-                for drow in drows:
-                    for dcol in dcols:
-                        if m+drow < 0 or m+drow >= rows \
-                        or n+dcol < 0 or n+dcol >= cols:
-                            continue
-                        (r1,g1,b1) = arr[m+drow][n+dcol]
-                        rSum += r1
-                        gSum += g1
-                        bSum += b1
-                r = int(rSum/(3**2))
-                g = int(gSum/(3**2))
-                b = int(bSum/(3**2))
-                arr[m][n] = (r, g, b)
+    # def blur(self):
+    #     arr = self.getImArr()
+    #     rows = len(arr)
+    #     cols = len(arr[0])
+    #     drows = list(range(-3//2+1, 3//2+1))
+    #     dcols = list(range(-3//2+1, 3//2+1))
+    #     for m in range(rows):
+    #         for n in range(cols):
+    #             rSum = 0
+    #             gSum = 0
+    #             bSum = 0
+    #             for drow in drows:
+    #                 for dcol in dcols:
+    #                     if m+drow < 0 or m+drow >= rows \
+    #                     or n+dcol < 0 or n+dcol >= cols:
+    #                         continue
+    #                     (r1,g1,b1) = arr[m+drow][n+dcol]
+    #                     rSum += r1
+    #                     gSum += g1
+    #                     bSum += b1
+    #             r = int(rSum/(3**2))
+    #             g = int(gSum/(3**2))
+    #             b = int(bSum/(3**2))
+    #             arr[m][n] = (r, g, b)
 
-        for x in range(rows):
-            for y in range(cols):
-                (r,g,b) = arr[x][y]
-                self.image.putpixel((x,y),(r,g,b))
+        # for x in range(rows):
+        #     for y in range(cols):
+        #         (r,g,b) = arr[x][y]
+        #         self.image.putpixel((x,y),(r,g,b))
     
     def gaussianBlur(self, amount):
         im2 = self.makeCopy()
@@ -278,7 +284,8 @@ class EditedImage():
         for r in range(rows):
             for c in range(cols):
                 (r1,g1,b1) = arr[r][c]
-                g2 = max(g1 - amount, 0)
+                minG = self.ogCopy.getpixel((r,c))[1]
+                g2 = max(g1 - amount, minG)
                 self.image.putpixel((r,c),(r1,g2,b1))
     
     def decreaseBlue(self, amount):
@@ -290,7 +297,8 @@ class EditedImage():
         for r in range(rows):
             for c in range(cols):
                 (r1,g1,b1) = arr[r][c]
-                b2 = max(b1 - amount, 0)
+                minB = self.ogCopy.getpixel((r,c))[2]
+                b2 = max(b1 - amount, minB)
                 self.image.putpixel((r,c),(r1,g1,b2))
     
     # grayscale conversion formula from https://tannerhelland.com/2011/10/01/grayscale-image-algorithm-vb6.html
@@ -306,13 +314,13 @@ class EditedImage():
                 gray = int(0.3*r1 + 0.59*g1 + 0.11*b1)
                 self.image.putpixel((r,c),(gray,gray,gray))
     
-    def fill(self, color, xClicked, yClicked):
+    def fill(self, color, xClicked, yClicked, similarityVal):
         im2 = self.makeCopy()
         self.addEdit(im2)
         arr = self.getImArr()
         xClicked = int(self.xCanvasToImage(xClicked))
         yClicked = int(self.yCanvasToImage(yClicked))
-        arr = floodfill(arr, xClicked, yClicked, color)
+        arr = floodfill(arr, xClicked, yClicked, color, similarityVal)
         rows = len(arr)
         cols = len(arr[0])
         for r in range(rows):
@@ -341,3 +349,7 @@ class EditedImage():
         im2 = self.makeCopy()
         self.addEdit(im2)
         self.image = self.image.transpose(Image.ROTATE_90)
+        copyH = self.height
+        copyW = self.width
+        self.width = copyH
+        self.height = copyW
