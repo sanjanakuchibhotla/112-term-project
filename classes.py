@@ -1,7 +1,6 @@
 from PIL import Image
 from PIL import ImageFilter
 from floodfill import *
-from flip import *
 from cmu_112_graphics import *
 
 class Button():
@@ -67,7 +66,7 @@ class Slider():
         self.pos = newPos
     
     def reset(self):
-        self.pos = self.left
+        self.setSliderPos(self.left)
     
     def clicked(self, x, y):
         return self.pos - self.r - 5 < x < self.pos + self.r + 5 and \
@@ -99,19 +98,6 @@ class Layers():
     def showLayer(self, idx):
         layer = self.hiddenLayers[idx]
         self.layers.insert(idx, layer)
-
-# class SingleLayer():
-#     def __init__(self, layer):
-#         self.layer = layer
-    
-#     def getImage(self):
-#         return self.layer
-    
-#     def addToLayer(self, newIm):
-#         self.layer.mergeImage(newIm)
-    
-#     def drawLayer(self, canvas):
-#         self.layer.drawImage(canvas)
 
 class EditedImage():
     def __init__(self, image, center):
@@ -159,10 +145,10 @@ class EditedImage():
         self.addEdit(im2)
         self.cx = x
         self.cy = y
-        self.left = x - self.width/2
-        self.top = y - self.height/2
-        self.right = x + self.width/2
-        self.bottom = y + self.height/2
+        self.left = self.cx - self.width/2
+        self.top = self.cy - self.height/2
+        self.right = self.cx + self.width/2
+        self.bottom = self.cy + self.height/2
     
     def xCanvasToImage(self, x):
         xImage = x - self.left
@@ -185,36 +171,6 @@ class EditedImage():
     
     def mergeImage(self, other):
         self.image.paste(other.image, (int(other.left), int(other.top)))
-
-    # def blur(self):
-    #     arr = self.getImArr()
-    #     rows = len(arr)
-    #     cols = len(arr[0])
-    #     drows = list(range(-3//2+1, 3//2+1))
-    #     dcols = list(range(-3//2+1, 3//2+1))
-    #     for m in range(rows):
-    #         for n in range(cols):
-    #             rSum = 0
-    #             gSum = 0
-    #             bSum = 0
-    #             for drow in drows:
-    #                 for dcol in dcols:
-    #                     if m+drow < 0 or m+drow >= rows \
-    #                     or n+dcol < 0 or n+dcol >= cols:
-    #                         continue
-    #                     (r1,g1,b1) = arr[m+drow][n+dcol]
-    #                     rSum += r1
-    #                     gSum += g1
-    #                     bSum += b1
-    #             r = int(rSum/(3**2))
-    #             g = int(gSum/(3**2))
-    #             b = int(bSum/(3**2))
-    #             arr[m][n] = (r, g, b)
-
-        # for x in range(rows):
-        #     for y in range(cols):
-        #         (r,g,b) = arr[x][y]
-        #         self.image.putpixel((x,y),(r,g,b))
     
     def gaussianBlur(self, amount):
         im2 = self.makeCopy()
@@ -331,20 +287,33 @@ class EditedImage():
     def flipH(self):
         im2 = self.makeCopy()
         self.addEdit(im2)
-        self.image = self.image.transpose(Image.FLIP_LEFT_RIGHT)
+        arr = self.getImArr()
+        rows = len(arr)
+        cols = len(arr[0])
+        flipped = [[0 for _ in range(cols)] for _ in range(rows)]
+        for r in range(rows):
+            for c in range(cols):
+                flipped[rows-r-1][c] = arr[r][c]
+        for x in range(rows):
+            for y in range(cols):
+                (r1,g1,b1) = flipped[x][y]
+                self.image.putpixel((x,y),(r1,g1,b1))
     
     def flipV(self):
         im2 = self.makeCopy()
         self.addEdit(im2)
-        self.image = self.image.transpose(Image.FLIP_TOP_BOTTOM)
-    
-    # def rotate90(self):
-    #     arr = self.getImArr()
-    #     rows, cols = len(arr), len(arr[0])
-    #     for r in range(rows):
-    #         for c in range(cols):
-    #             (r1,g1,b1) = arr[r][c]
-    #             self.image.putpixel((r,c),(r1,g1,b1))
+        arr = self.getImArr()
+        rows = len(arr)
+        cols = len(arr[0])
+        flipped = [[0 for _ in range(cols)] for _ in range(rows)]
+        for r in range(rows):
+            for c in range(cols):
+                flipped[r][cols-c-1] = arr[r][c]
+        for x in range(rows):
+            for y in range(cols):
+                (r1,g1,b1) = flipped[x][y]
+                self.image.putpixel((x,y),(r1,g1,b1))
+
     def rotate(self):
         im2 = self.makeCopy()
         self.addEdit(im2)
