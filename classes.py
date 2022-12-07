@@ -123,6 +123,7 @@ class EditedImage():
         self.bottom = self.cy + self.height/2
 
         self.edits = []
+        self.centers = []
 
         self.filename = ''
 
@@ -173,8 +174,15 @@ class EditedImage():
                 im2.putpixel((x,y),(r,g,b))
         return im2
     
+    def copyCenter(self):
+        center = (self.cx, self.cy)
+        return center
+    
     def addEdit(self, edit):
         self.edits.append(edit)
+    
+    def addCenter(self, center):
+        self.centers.append(center)
     
     def mergeImage(self, other):
         self.image.paste(other.image, (int(other.left), int(other.top)))
@@ -189,16 +197,22 @@ class EditedImage():
     def gaussianBlur(self, amount):
         im2 = self.makeCopy()
         self.addEdit(im2)
+        center2 = self.copyCenter()
+        self.addCenter(center2)
         self.image = self.image.filter(ImageFilter.GaussianBlur(amount))
 
     def sharpen(self, amount):
         im2 = self.makeCopy()
         self.addEdit(im2)
+        center2 = self.copyCenter()
+        self.addCenter(center2)
         self.image = self.image.filter(ImageFilter.UnsharpMask(amount,50,3))
     
     def increaseRed(self, amount):
         im2 = self.makeCopy()
         self.addEdit(im2)
+        center2 = self.copyCenter()
+        self.addCenter(center2)
         arr = self.getImArr()
         rows = len(arr)
         cols = len(arr[0])
@@ -211,6 +225,8 @@ class EditedImage():
     def increaseGreen(self, amount):
         im2 = self.makeCopy()
         self.addEdit(im2)
+        center2 = self.copyCenter()
+        self.addCenter(center2)
         arr = self.getImArr()
         rows = len(arr)
         cols = len(arr[0])
@@ -223,6 +239,8 @@ class EditedImage():
     def increaseBlue(self, amount):
         im2 = self.makeCopy()
         self.addEdit(im2)
+        center2 = self.copyCenter()
+        self.addCenter(center2)
         arr = self.getImArr()
         rows = len(arr)
         cols = len(arr[0])
@@ -235,6 +253,8 @@ class EditedImage():
     def decreaseRed(self, amount):
         im2 = self.makeCopy()
         self.addEdit(im2)
+        center2 = self.copyCenter()
+        self.addCenter(center2)
         arr = self.getImArr()
         rows = len(arr)
         cols = len(arr[0])
@@ -248,6 +268,8 @@ class EditedImage():
     def decreaseGreen(self, amount):
         im2 = self.makeCopy()
         self.addEdit(im2)
+        center2 = self.copyCenter()
+        self.addCenter(center2)
         arr = self.getImArr()
         rows = len(arr)
         cols = len(arr[0])
@@ -261,6 +283,8 @@ class EditedImage():
     def decreaseBlue(self, amount):
         im2 = self.makeCopy()
         self.addEdit(im2)
+        center2 = self.copyCenter()
+        self.addCenter(center2)
         arr = self.getImArr()
         rows = len(arr)
         cols = len(arr[0])
@@ -275,6 +299,8 @@ class EditedImage():
     def makeBW(self):
         im2 = self.makeCopy()
         self.addEdit(im2)
+        center2 = self.copyCenter()
+        self.addCenter(center2)
         arr = self.getImArr()
         rows = len(arr)
         cols = len(arr[0])
@@ -287,6 +313,8 @@ class EditedImage():
     def fill(self, color, xClicked, yClicked, similarityVal):
         im2 = self.makeCopy()
         self.addEdit(im2)
+        center2 = self.copyCenter()
+        self.addCenter(center2)
         arr = self.getImArr()
         xClicked = int(self.xCanvasToImage(xClicked))
         yClicked = int(self.yCanvasToImage(yClicked))
@@ -301,6 +329,8 @@ class EditedImage():
     def flipH(self):
         im2 = self.makeCopy()
         self.addEdit(im2)
+        center2 = self.copyCenter()
+        self.addCenter(center2)
         arr = self.getImArr()
         rows = len(arr)
         cols = len(arr[0])
@@ -316,6 +346,8 @@ class EditedImage():
     def flipV(self):
         im2 = self.makeCopy()
         self.addEdit(im2)
+        center2 = self.copyCenter()
+        self.addCenter(center2)
         arr = self.getImArr()
         rows = len(arr)
         cols = len(arr[0])
@@ -331,8 +363,18 @@ class EditedImage():
     def rotate(self):
         im2 = self.makeCopy()
         self.addEdit(im2)
+        center2 = self.copyCenter()
+        self.addCenter(center2)
         self.image = self.image.transpose(Image.ROTATE_90)
         copyH = self.height
         copyW = self.width
         self.width = copyH
         self.height = copyW
+        copyCY = self.cy
+        copyCX = self.cx
+        self.cx = copyCY
+        self.cy = copyCX
+        self.left = self.cx - self.width/2
+        self.right = self.cx + self.width/2
+        self.top = self.cy - self.height/2
+        self.bottom = self.cy + self.height/2

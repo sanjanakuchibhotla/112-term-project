@@ -188,6 +188,15 @@ def userMode_keyPressed(app, event):
         if len(app.currentImage.edits) > 0:
             last = len(app.currentImage.edits) - 1
             app.currentImage.image = app.currentImage.edits.pop(last)
+            app.currentImage.center = app.currentImage.centers.pop(last)
+            app.currentImage.cx = app.currentImage.center[0]
+            app.currentImage.cy = app.currentImage.center[1]
+            app.currentImage.width = app.currentImage.image.size[0]
+            app.currentImage.height = app.currentImage.image.size[1]
+            app.currentImage.left = app.currentImage.cx - app.currentImage.width/2
+            app.currentImage.top = app.currentImage.cy - app.currentImage.height/2
+            app.currentImage.right = app.currentImage.cx + app.currentImage.width/2
+            app.currentImage.bottom = app.currentImage.cy + app.currentImage.height/2
 
 def userMode_timerFired(app):
     if not app.changingLayer and len(app.layers.layers) > 0:
@@ -234,6 +243,15 @@ def userMode_mousePressed(app, event):
     if app.undo.clicked(event.x, event.y) and len(app.currentImage.edits) > 0:
         last = len(app.currentImage.edits) - 1
         app.currentImage.image = app.currentImage.edits.pop(last)
+        app.currentImage.center = app.currentImage.centers.pop(last)
+        app.currentImage.cx = app.currentImage.center[0]
+        app.currentImage.cy = app.currentImage.center[1]
+        app.currentImage.width = app.currentImage.image.size[0]
+        app.currentImage.height = app.currentImage.image.size[1]
+        app.currentImage.left = app.currentImage.cx - app.currentImage.width/2
+        app.currentImage.top = app.currentImage.cy - app.currentImage.height/2
+        app.currentImage.right = app.currentImage.cx + app.currentImage.width/2
+        app.currentImage.bottom = app.currentImage.cy + app.currentImage.height/2
     
     # fill the image if the filling state is true
     if app.filling:
