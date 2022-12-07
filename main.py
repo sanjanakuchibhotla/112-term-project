@@ -8,7 +8,9 @@ from classes import *
 from floodfill import *
 from crop import *
  
+# SAMPLE IMAGES:
 # dog image from google: https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.petfinder.com%2Fdog-breeds%2F&psig=AOvVaw3Fm5UKfPEVjxaWVddBDKIY&ust=1669057075474000&source=images&cd=vfe&ved=0CA8QjRxqFwoTCPDvvqS4vfsCFQAAAAAdAAAAABAD
+
 
 # ############################################### #
 # --------------- SPLASH SCREEN ----------------- #
@@ -74,7 +76,7 @@ def startMode_mousePressed(app, event):
         userInput = app.getUserInput('Open Image:')
         try:
             im = EditedImage(app.loadImage(userInput), (app.cxCanvas, app.cyCanvas))
-            app.layers.addLayer(im)
+            app.layers.addLayer(SingleLayer(im))
             app.mode = 'userMode'
         except:
             pass
@@ -95,6 +97,7 @@ def startMode_redrawAll(app, canvas):
 # --------------- USER MODE ----------------- #
 # ########################################### #
 
+# initializing app variables:
 def appStarted(app):
     app.margin = 10
     app.mode = 'splashScreenMode'
@@ -102,13 +105,14 @@ def appStarted(app):
     app.cyCanvas = 5*app.height/14
     app.startingImage = Image.new(mode='RGB',size=(1,1),color=(255,255,255))
     app.im = EditedImage(app.startingImage, (app.cxCanvas, app.cyCanvas))
+    app.layer1 = SingleLayer(app.im)
     app.imWidth = app.im.width
     app.imHeight = app.im.height
 
     # LAYERS
     app.layers = Layers([])
     if len(app.layers.layers) > 0:
-        app.currentImage = app.layers.layers[len(app.layers.layers)-1]
+        app.currentImage = app.layers.layers[len(app.layers.layers)-1].im
     app.changingLayer = False
 
     # STATES
@@ -180,11 +184,13 @@ def userMode_keyPressed(app, event):
 
 def userMode_timerFired(app):
     if not app.changingLayer and len(app.layers.layers) > 0:
-        app.currentImage = app.layers.layers[-1]
+        app.currentImage = app.layers.layers[-1].im
+
 
 def userMode_mousePressed(app, event):
     if app.save.clicked(event.x,event.y):
-        for im in app.layers.layers:
+        for layer in app.layers.layers:
+            im = layer.im
             app.finalImage.paste(im.image, (int(im.cx-im.width/2), int(im.cy-im.height/2)))
         app.finalImage.save('tpfile.jpeg',format='jpeg')
 
@@ -225,8 +231,8 @@ def userMode_mousePressed(app, event):
         try:
             im = app.loadImage(userInput)
             eIm = EditedImage(im, (app.cxCanvas, app.cyCanvas))
-            app.layers.addLayer(eIm)
-            app.currentImage = app.layers.layers[-1]
+            app.layers.addLayer(SingleLayer(eIm))
+            app.currentImage = app.layers.layers[-1].im
             for slider in app.sliders:
                 slider.reset()
         except:
@@ -235,9 +241,17 @@ def userMode_mousePressed(app, event):
     if layerClicked(app, event.x, event.y):
         idx = layerClicked(app, event.x, event.y)
         app.changingLayer = True
-        app.currentImage = app.layers.layers[idx-1]
+        app.currentImage = app.layers.layers[idx-1].im
         for slider in app.sliders:
             slider.reset()
+    
+    if hideClicked(app, event.x, event.y):
+        idx = hideClicked(app, event.x, event.y)
+        layer = app.layers.layers[idx-1]
+        if layer.isHidden():
+            layer.show()
+        else:
+            layer.hide()
 
 def userMode_mouseReleased(app, event):
     for button in app.buttons:
@@ -340,6 +354,9 @@ def userMode_mouseReleased(app, event):
         app.currentImage.sharpen(amount)
         app.startSharp = app.endSharp
         app.sharpening = False
+    
+    if app.isBW:
+        app.currentImage.makeBW()
 
 def userMode_mouseDragged(app, event):
     # move slider if clicked and dragged
@@ -373,21 +390,21 @@ def userMode_mouseDragged(app, event):
     # SLIDERS FOR COLORS
     if app.red.clicked(event.x,event.y):
         app.endRed = event.x
-        if app.endRed > app.startRed:
+        if app.endRed > app.startRed: # moving right
             app.increasingRed = True
         else:
             app.decreasingRed = True
 
     if app.green.clicked(event.x,event.y):
         app.endGreen = event.x
-        if app.endGreen > app.startGreen:
+        if app.endGreen > app.startGreen: # moving right
             app.increasingGreen = True
         else:
             app.decreasingGreen = True
 
     if app.blue.clicked(event.x,event.y):
         app.endBlue = event.x
-        if app.endBlue > app.startBlue:
+        if app.endBlue > app.startBlue: # moving right
             app.increasingBlue = True
         else:
             app.decreasingBlue = True
@@ -501,6 +518,16 @@ def drawLayers(app, canvas):
         y1 = yLayer + 50
         canvas.create_rectangle(x0, y0, x1, y1, fill='lightgray', outline='black', activefill='gray',width=3)
         canvas.create_text((x0+x1)/2, (y0+y1)/2, text=f'Layer {n+1}', font = 'Helvetica 10 bold')
+        # draws hide portion of button
+        hideText = ''
+        if app.layers.layers[n].isHidden():
+            hideText = 'show'
+        else:
+            hideText = 'hide'
+        hidey0 = y0 + 60
+        hidey1 = y1 + 30
+        canvas.create_rectangle(x0, hidey0, x1, hidey1, fill='azure', outline='black', activefill='gray',width=3)
+        canvas.create_text((x0+x1)/2, (hidey0+hidey1)/2, text=hideText, font = 'Helvetica 10 bold')
 
 # given a layer index, returns the bounds of the layer square
 def getLayerBounds(app, idx):
@@ -515,8 +542,19 @@ def getLayerBounds(app, idx):
 # returns which layer button was clicked, or False if none were clicked
 def layerClicked(app, x, y):
     numLayers = len(app.layers.layers)
-    for n in range(0,numLayers):
+    for n in range(numLayers):
         x0, y0, x1, y1 = getLayerBounds(app, n)
+        if x0 <= x <= x1 and y0 <= y <= y1:
+            return n+1
+    return False
+
+# returns which layer was hidden if the hide button was clicked, or False if none were clicked
+def hideClicked(app, x, y):
+    numLayers = len(app.layers.layers)
+    for n in range(numLayers):
+        x0, y0, x1, y1 = getLayerBounds(app, n)
+        y0 += 60
+        y1 += 30
         if x0 <= x <= x1 and y0 <= y <= y1:
             return n+1
     return False
@@ -561,7 +599,10 @@ def userMode_redrawAll(app, canvas):
     for slider in app.sliders:
         drawSlider(canvas, slider)
     for layer in app.layers.layers:
-        layer.drawImage(canvas)
+        im = layer.im
+        hidden = layer.isHidden()
+        if not hidden:
+            im.drawImage(canvas)
 
 width = 1200
 height = 800

@@ -99,6 +99,20 @@ class Layers():
         layer = self.hiddenLayers[idx]
         self.layers.insert(idx, layer)
 
+class SingleLayer():
+    def __init__(self, im):
+        self.im = im
+        self.hidden = False
+    
+    def isHidden(self):
+        return self.hidden
+    
+    def hide(self):
+        self.hidden = True
+    
+    def show(self):
+        self.hidden = False
+
 class EditedImage():
     def __init__(self, image, center):
         self.image = image
