@@ -6,11 +6,11 @@
 from cmu_112_graphics import *
 from classes import *
 from floodfill import *
-from crop import *
  
 # SAMPLE IMAGES:
 # dog image from google: https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.petfinder.com%2Fdog-breeds%2F&psig=AOvVaw3Fm5UKfPEVjxaWVddBDKIY&ust=1669057075474000&source=images&cd=vfe&ved=0CA8QjRxqFwoTCPDvvqS4vfsCFQAAAAAdAAAAABAD
-
+# duck image from google: https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.bestprintingonline.com%2Fresolution.htm&psig=AOvVaw0fu7WJ7dQ9LvwCfQCWN03z&ust=1670468964572000&source=images&cd=vfe&ved=0CA8QjRxqFwoTCLCY84XE5vsCFQAAAAAdAAAAABAD
+# square image from google: https://www.google.com/url?sa=i&url=https%3A%2F%2Fillustoon.com%2F%3Fid%3D7281&psig=AOvVaw0h_pkpfIxYlsMN0T5FgrDe&ust=1670469096949000&source=images&cd=vfe&ved=0CA8QjRxqFwoTCOD81LrE5vsCFQAAAAAdAAAAABAD
 
 # ############################################### #
 # --------------- SPLASH SCREEN ----------------- #
@@ -122,6 +122,9 @@ def appStarted(app):
     app.filling = False
     app.blurring = False
     app.sharpening = False
+    app.picking = False
+
+    app.pixelPicked = None
 
     # COLOR STATES
     app.increasingRed = False
@@ -148,9 +151,10 @@ def appStarted(app):
     app.move = Button('move', (5*app.width/6, 0.5*app.height/8), 'dodgerblue', 'dodgerblue')
     app.bw = Button('b+w', (5*app.width/6,1.75*app.height/8), 'dodgerblue', 'dodgerblue')
     app.undo = Button('undo', (2*app.width/3 + 60, app.margin + 20), 'dodgerblue', 'dodgerblue')
-    app.fill = Button('fill', (5*app.width/6, 24*app.height/36), 'dodgerblue', 'dodgerblue')
+    app.fill = Button('fill', (5*app.width/6, 22*app.height/36), 'dodgerblue', 'dodgerblue')
     app.sim = Button('similarity', (5*app.width/6, 26*app.height/36), 'slategray1', 'slategray1')
-    app.buttons = [app.flipH, app.flipV, app.rotate, app.move, app.bw, app.undo, app.save, app.fill]
+    app.colorPicker = Button('color picker', (5*app.width/6, 28*app.height/36), 'dodgerblue', 'dodgerblue')
+    app.buttons = [app.flipH, app.flipV, app.rotate, app.move, app.bw, app.undo, app.save, app.fill, app.colorPicker]
 
     # USER MODE SLIDERS
     app.blur = Slider('blur', (5*app.width/6, 13*app.height/36), 'black')
@@ -186,46 +190,58 @@ def userMode_timerFired(app):
     if not app.changingLayer and len(app.layers.layers) > 0:
         app.currentImage = app.layers.layers[-1].im
 
-
 def userMode_mousePressed(app, event):
-    if app.save.clicked(event.x,event.y):
-        for layer in app.layers.layers:
-            im = layer.im
-            app.finalImage.paste(im.image, (int(im.cx-im.width/2), int(im.cy-im.height/2)))
-        app.finalImage.save('tpfile.jpeg',format='jpeg')
-
     for button in app.buttons:
         if button.clicked(event.x, event.y):
             button.color = 'gray'
-
+    
+    # save the image with all the layers currently shown if the save button clicked
+    if app.save.clicked(event.x,event.y):
+        for layer in app.layers.layers:
+            im = layer.im
+            if not layer.isHidden():
+                app.finalImage.paste(im.image, (int(im.cx-im.width/2), int(im.cy-im.height/2)))
+        app.finalImage.save('final image.jpeg',format='jpeg')
+    
+    # flip the image horizontally if clicked
     if app.flipH.clicked(event.x,event.y):
         app.currentImage.flipH()
     
+    # flip the image vertically if clicked
     if app.flipV.clicked(event.x,event.y):
         app.currentImage.flipV()
-
+    
+    # toggle the moving state and let the image be moved if the move button is clicked
     if app.move.clicked(event.x, event.y):
         app.moving = not app.moving
         if app.moving:
             app.move.name = 'moving...'
         else:
             app.move.name = 'move'
-
+    
+    # make the image black and white if the black and white button is clicked
     if app.bw.clicked(event.x, event.y):
         app.currentImage.makeBW()
-
+    
+    # rotate the image 90 degrees ccw if rotate is clicked
     if app.rotate.clicked(event.x, event.y):
         app.currentImage.rotate()
-
+    
+    # undo the last edit made if the undo button is clicked
     if app.undo.clicked(event.x, event.y) and len(app.currentImage.edits) > 0:
         last = len(app.currentImage.edits) - 1
         app.currentImage.image = app.currentImage.edits.pop(last)
-
+    
+    # fill the image if the filling state is true
     if app.filling:
         if (app.currentImage.right >= event.x >= app.currentImage.left and \
             app.currentImage.top <= event.y <= app.currentImage.bottom):
             app.currentImage.fill(app.fillcolor, event.x, event.y, app.similarityVal)
     
+    if app.picking and app.currentImage.clicked(event.x,event.y):
+        app.pixelPicked = app.currentImage.getPixelAtCoord(event.x,event.y)
+    
+    # add a layer if the add layer button is clicked
     if addLayerClicked(app, event.x, event.y):
         userInput = app.getUserInput('Add a layer:')
         try:
@@ -238,6 +254,7 @@ def userMode_mousePressed(app, event):
         except:
             pass
     
+    # switch to layer clicked if a certain layer is clicked
     if layerClicked(app, event.x, event.y):
         idx = layerClicked(app, event.x, event.y)
         app.changingLayer = True
@@ -245,6 +262,7 @@ def userMode_mousePressed(app, event):
         for slider in app.sliders:
             slider.reset()
     
+    # toggle layer hiding if hide/show button clicked
     if hideClicked(app, event.x, event.y):
         idx = hideClicked(app, event.x, event.y)
         layer = app.layers.layers[idx-1]
@@ -267,7 +285,10 @@ def userMode_mouseReleased(app, event):
             color = app.getUserInput('input rgb value in the form (r,g,b):')
             try:
                 app.fill.name = 'filling...'
-                color = color[1:-1]
+                if color[0] == '(':
+                    color = color[1:]
+                if color[-1] == ')':
+                    color = color[:-1]
                 rgbVals = color.split(',')
                 r,g,b = int(rgbVals[0]),int(rgbVals[1]),int(rgbVals[2])
                 while not ((0 <= r <= 255) and (0 <= g <= 255) and (0 <= b <= 255)):
@@ -347,16 +368,21 @@ def userMode_mouseReleased(app, event):
         app.currentImage.gaussianBlur(amount)
         app.startBlur = app.endBlur
         app.blurring = False
-
+    
+    # sharpens the image if the sharpen slider is moved to the right
     if app.sharpening:
         dx = app.endSharp - app.startSharp
-        amount = dx/8
+        amount = dx/10
         app.currentImage.sharpen(amount)
         app.startSharp = app.endSharp
         app.sharpening = False
     
-    if app.isBW:
-        app.currentImage.makeBW()
+    if app.colorPicker.clicked(event.x, event.y):
+        app.picking = not app.picking
+        if app.picking:
+            app.colorPicker.name = 'picking...'
+        else:
+            app.colorPicker.name = 'color picker'
 
 def userMode_mouseDragged(app, event):
     # move slider if clicked and dragged
@@ -408,6 +434,9 @@ def userMode_mouseDragged(app, event):
             app.increasingBlue = True
         else:
             app.decreasingBlue = True
+    
+    if app.picking and app.currentImage.clicked(event.x,event.y):
+        app.pixelPicked = app.currentImage.getPixelAtCoord(event.x,event.y)
 
 def drawBackground(app, canvas):
     canvas.create_rectangle(0,0,app.width,app.height,fill='black')
@@ -479,18 +508,33 @@ def drawFillColor(app, canvas):
     (r,g,b) = app.fillcolor
     color = rgbString(r,g,b)
     pos = app.fill.getCenter()[1]
-    canvas.create_rectangle(5*app.width/6 + 50, pos - 10,
-                            5*app.width/6 + 70, pos + 10,
+    canvas.create_rectangle(5*app.width/6 - 20, pos + 30,
+                            5*app.width/6 + 20, pos + 70,
                             fill=color, outline='black')
 
 # draws area with all the layers
 def drawLayerArea(app, canvas):
-    canvas.create_rectangle(app.margin, 5*app.height/7,
-                            2*app.width/3-app.margin, app.height-app.margin,
-                            fill = 'NavajoWhite3')
-    canvas.create_line(app.margin,5*app.height/7,
-                       2*app.width/3-app.margin,5*app.height/7,
-                       width=5)
+    xleft = app.margin
+    color = 'NavajoWhite3'
+    r = 20
+    canvas.create_rectangle(0,5*app.height/7-5,2*app.width/3,app.height,
+                            fill='black')
+    canvas.create_oval(xleft, 5*app.height/7, xleft + 2*r, 5*app.height/7 + 2*r,
+                       fill=color, outline=color)
+    canvas.create_oval(2*app.width/3-app.margin-2*r, 5*app.height/7,
+                       2*app.width/3-app.margin, 5*app.height/7 + 2*r,
+                       fill=color, outline=color)
+    canvas.create_oval(xleft, app.height - app.margin - 2*r, xleft + 2*r, app.height - app.margin,
+                       fill=color, outline=color)
+    canvas.create_oval(2*app.width/3-app.margin-2*r, app.height-app.margin-2*r,
+                       2*app.width/3-app.margin, app.height-app.margin,
+                       fill=color, outline=color)
+    canvas.create_rectangle(app.margin+r, 5*app.height/7,
+                            2*app.width/3-app.margin-r, app.height-app.margin,
+                            fill = color, outline=color)
+    canvas.create_rectangle(app.margin, 5*app.height/7+r,
+                            2*app.width/3-app.margin, app.height-app.margin-r,
+                            fill = color,outline=color)
     canvas.create_text(app.width/3-app.margin,5*app.height/7+20,
                        text='Layers:', font = 'Helvetica 20 bold italic')
 
@@ -526,7 +570,7 @@ def drawLayers(app, canvas):
             hideText = 'hide'
         hidey0 = y0 + 60
         hidey1 = y1 + 30
-        canvas.create_rectangle(x0, hidey0, x1, hidey1, fill='azure', outline='black', activefill='gray',width=3)
+        canvas.create_rectangle(x0, hidey0, x1, hidey1, fill='azure', outline='black', activefill='gray',width=2)
         canvas.create_text((x0+x1)/2, (hidey0+hidey1)/2, text=hideText, font = 'Helvetica 10 bold')
 
 # given a layer index, returns the bounds of the layer square
@@ -566,6 +610,21 @@ def addLayerClicked(app, x, y):
     size = 50
     return boxleftx <= x <= boxleftx + size and boxlefty <= y <= boxlefty + size
 
+# draws the value of the pixel picked
+def drawPixelPicked(app, canvas):
+    pixel = str(app.pixelPicked)
+    canvas.create_text(5*app.width/6, 29.5*app.height/36, text=pixel, font = 'Helvetica 20 bold')
+
+# draws a box of the color that is picked on the canvas
+def drawColorPicked(app, canvas):
+    r = app.pixelPicked[0]
+    g = app.pixelPicked[1]
+    b = app.pixelPicked[2]
+    color = rgbString(r,g,b)
+    canvas.create_rectangle(5*app.width/6 - 20, 31.5*app.height/36 - 20,
+                            5*app.width/6 + 20, 31.5*app.height/36 + 20,
+                            fill=color)
+
 # draws area with all tools shown
 def drawToolArea(app, canvas):
     xleft = 2*app.width/3
@@ -603,6 +662,9 @@ def userMode_redrawAll(app, canvas):
         hidden = layer.isHidden()
         if not hidden:
             im.drawImage(canvas)
+    if app.pixelPicked != None:
+        drawPixelPicked(app, canvas)
+        drawColorPicked(app, canvas)
 
 width = 1200
 height = 800

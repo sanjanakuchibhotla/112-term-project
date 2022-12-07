@@ -121,10 +121,6 @@ class EditedImage():
 
         self.ogCopy = self.makeCopy()
 
-        self.redAdded = 0
-        self.greenAdded = 0
-        self.blueAdded = 0
-
         self.cx = center[0]
         self.left = self.cx - self.width/2
         self.right = self.cx + self.width/2
@@ -185,6 +181,12 @@ class EditedImage():
     
     def mergeImage(self, other):
         self.image.paste(other.image, (int(other.left), int(other.top)))
+
+    def getPixelAtCoord(self, x, y):
+        imX = self.xCanvasToImage(x)
+        imY = self.yCanvasToImage(y)
+        pixel = self.image.getpixel((imX,imY))
+        return pixel
     
     def gaussianBlur(self, amount):
         im2 = self.makeCopy()
