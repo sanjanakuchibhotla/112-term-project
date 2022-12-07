@@ -185,10 +185,11 @@ def appStarted(app):
 
 def userMode_keyPressed(app, event):
     if event.key == 'u':
-        if len(app.currentImage.edits) > 0:
+        if len(app.currentImage.edits) > 0 and len(app.currentImage.centers) > 0:
             last = len(app.currentImage.edits) - 1
+            lastc = len(app.currentImage.centers) - 1
             app.currentImage.image = app.currentImage.edits.pop(last)
-            app.currentImage.center = app.currentImage.centers.pop(last)
+            app.currentImage.center = app.currentImage.centers.pop(lastc)
             app.currentImage.cx = app.currentImage.center[0]
             app.currentImage.cy = app.currentImage.center[1]
             app.currentImage.width = app.currentImage.image.size[0]
@@ -240,10 +241,11 @@ def userMode_mousePressed(app, event):
         app.currentImage.rotate()
     
     # undo the last edit made if the undo button is clicked
-    if app.undo.clicked(event.x, event.y) and len(app.currentImage.edits) > 0:
+    if app.undo.clicked(event.x, event.y) and len(app.currentImage.edits) > 0 and len(app.currentImage.centers) > 0:
         last = len(app.currentImage.edits) - 1
+        lastc = len(app.currentImage.centers) - 1
         app.currentImage.image = app.currentImage.edits.pop(last)
-        app.currentImage.center = app.currentImage.centers.pop(last)
+        app.currentImage.center = app.currentImage.centers.pop(lastc)
         app.currentImage.cx = app.currentImage.center[0]
         app.currentImage.cy = app.currentImage.center[1]
         app.currentImage.width = app.currentImage.image.size[0]
@@ -460,6 +462,7 @@ def userMode_mouseDragged(app, event):
     if app.picking and app.currentImage.clicked(event.x,event.y):
         app.pixelPicked = app.currentImage.getPixelAtCoord(event.x,event.y)
 
+# draws the background
 def drawBackground(app, canvas):
     canvas.create_rectangle(0,0,app.width,app.height,fill='black')
 
