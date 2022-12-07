@@ -3,10 +3,11 @@ from PIL import ImageFilter
 from floodfill import *
 from cmu_112_graphics import *
 
+# Button class
 class Button():
     def __init__(self, name, center, currColor, changeColor):
         self.name = name
-        self.w = 80
+        self.w = 100
         self.h = 20
         self.c = center
         self.color = currColor
@@ -29,11 +30,12 @@ class Button():
         y1 = y + self.h/2
         return x0,y0,x1,y1
     
+    # returns whether the button was clicked at the given x,y
     def clicked(self,mouseX,mouseY):
         x0,y0,x1,y1 = self.getCellBounds()
         return x0 <= mouseX <= x1 and y0 <= mouseY <= y1
 
-    
+# Slider class
 class Slider():
     def __init__(self, name, center, color):
         self.name = name
@@ -65,19 +67,16 @@ class Slider():
     def setSliderPos(self, newPos):
         self.pos = newPos
     
+    # resets the position of the slider
     def reset(self):
         self.setSliderPos(self.left)
     
+    # returns whether the slider was clicked at the given x,y
     def clicked(self, x, y):
         return self.pos - self.r - 5 < x < self.pos + self.r + 5 and \
                self.c[1] - self.r - 5 < y < self.c[1] + self.r + 5
-    
-    def movingRight(self, x):
-        return x > self.getPos() - 1
-    
-    def movingLeft(self, x):
-        return x < self.getPos()
 
+# Class of all layers (made up of SingleLayers)
 class Layers():
     def __init__(self,layers):
         self.layers = layers
@@ -90,15 +89,8 @@ class Layers():
     
     def addLayer(self, layer):
         self.layers.append(layer)
-    
-    def hideLayer(self, idx):
-        layer = self.layers.pop(idx)
-        self.hiddenLayers[idx] = layer
-    
-    def showLayer(self, idx):
-        layer = self.hiddenLayers[idx]
-        self.layers.insert(idx, layer)
 
+# SingleLayer class with image and hidden boolean as attributes
 class SingleLayer():
     def __init__(self, im):
         self.im = im
@@ -113,6 +105,7 @@ class SingleLayer():
     def show(self):
         self.hidden = False
 
+# EditedImage class which makes up each layer
 class EditedImage():
     def __init__(self, image, center):
         self.image = image
@@ -130,6 +123,8 @@ class EditedImage():
         self.bottom = self.cy + self.height/2
 
         self.edits = []
+
+        self.filename = ''
 
     def getImArr(self):
         im = self.image
@@ -160,10 +155,12 @@ class EditedImage():
         self.right = self.cx + self.width/2
         self.bottom = self.cy + self.height/2
     
+    # translates the x value of a canvas coordinate to an image coordinate
     def xCanvasToImage(self, x):
         xImage = x - self.left
         return xImage
     
+    # translates the y value of a canvas coordinate to an image coordinate
     def yCanvasToImage(self, y):
         yImage = y - self.top
         return yImage
@@ -181,7 +178,8 @@ class EditedImage():
     
     def mergeImage(self, other):
         self.image.paste(other.image, (int(other.left), int(other.top)))
-
+    
+    # returns the pixel value of an image at a given canvas coordinate
     def getPixelAtCoord(self, x, y):
         imX = self.xCanvasToImage(x)
         imY = self.yCanvasToImage(y)

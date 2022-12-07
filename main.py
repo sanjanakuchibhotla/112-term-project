@@ -28,23 +28,25 @@ def clickedHere(app, x, y):
     return app.width/3 < x < 2*app.width/3 and 5*app.height/8 < y < 6*app.height/8
 
 def drawClickHere(app, canvas):
+    canvas.create_rectangle(app.width/3-10, 5*app.height/8-10,
+                            2*app.width/3+10, 6*app.height/8+10, outline='dark green', width=5)
     canvas.create_rectangle(app.width/3, 5*app.height/8,
                             2*app.width/3, 6*app.height/8, fill='black', activefill='dark green')
     canvas.create_text(app.width/2, 5.5*app.height/8, text='Click Here to Edit!',
-                       font='Helvetica 30 bold', fill = 'white')
+                       font='Copperplate 30 bold', fill = 'SlateGray1')
 
 def drawTitle(app, canvas):
-    font = 'Times 36 bold italic'
+    font = 'Copperplate 50 bold'
     canvas.create_rectangle(app.width/3, app.height/5,
                             2*app.width/3, 7*app.height/15,
                             outline='dark green', width=5)
     canvas.create_rectangle(app.width/3-15, app.height/5-15,
                             2*app.width/3+15, 7*app.height/15+15,
                             outline='dark green', width=5)
-    canvas.create_text(7*app.width/15, 4*app.height/15, text='Image',
-                       font=font, fill='white')
-    canvas.create_text(8*app.width/15, 6*app.height/15, text='Editor',
-                       font=font, fill='white')
+    canvas.create_text(7.5*app.width/15, 4.5*app.height/15, text='Image',
+                       font=font, fill='SlateGray1')
+    canvas.create_text(7.5*app.width/15, 5.5*app.height/15, text='Editor',
+                       font=font, fill='SlateGray1')
 
 def splashScreenMode_redrawAll(app, canvas):
     canvas.create_rectangle(0,0,app.width,app.height,fill='DarkOliveGreen4')
@@ -63,19 +65,20 @@ def splashScreenMode_redrawAll(app, canvas):
 
 def drawOpenButton(app, canvas):
     cx, cy = app.width/2, app.height/2
-    canvas.create_rectangle(cx - 50, cy - 20, cx + 50, cy + 20, fill='lightgray',
-                  activefill='gray')
-    canvas.create_text(cx, cy, text='Pick image', font='Helvetica 15 bold')
+    canvas.create_rectangle(cx - 100, cy - 30, cx + 100, cy + 30, fill='LightSteelBlue1',
+                  activefill='LightSteelBlue3')
+    canvas.create_text(cx, cy, text='Pick image', font='Courier 20 bold')
 
 def openButtonClicked(app, x, y):
     cx, cy = app.width/2, app.height/2
-    return cx - 50 <= x <= cx + 50 and cy - 20 <= y <= cy + 20
+    return cx - 100 <= x <= cx + 100 and cy - 30 <= y <= cy + 30
 
 def startMode_mousePressed(app, event):
     if openButtonClicked(app, event.x, event.y):
         userInput = app.getUserInput('Open Image:')
         try:
             im = EditedImage(app.loadImage(userInput), (app.cxCanvas, app.cyCanvas))
+            im.filename = userInput
             app.layers.addLayer(SingleLayer(im))
             app.mode = 'userMode'
         except:
@@ -88,9 +91,9 @@ def startMode_redrawAll(app, canvas):
     canvas.create_rectangle(app.margin, app.margin,
                             app.width-app.margin, app.height-app.margin,
                             outline='dark green',width=10)
-    canvas.create_rectangle(app.width/2 - 80, app.height/2 - 50,
-                            app.width/2 + 80, app.height/2 + 50,
-                            fill=None, outline='dark green', width = 5)
+    canvas.create_rectangle(app.width/2 - 110, app.height/2 - 40,
+                            app.width/2 + 110, app.height/2 + 40,
+                            fill=None, outline='dark green', width = 7)
     drawOpenButton(app, canvas)
 
 # ########################################### #
@@ -248,6 +251,7 @@ def userMode_mousePressed(app, event):
             im = app.loadImage(userInput)
             eIm = EditedImage(im, (app.cxCanvas, app.cyCanvas))
             app.layers.addLayer(SingleLayer(eIm))
+            eIm.filename = userInput
             app.currentImage = app.layers.layers[-1].im
             for slider in app.sliders:
                 slider.reset()
@@ -441,11 +445,13 @@ def userMode_mouseDragged(app, event):
 def drawBackground(app, canvas):
     canvas.create_rectangle(0,0,app.width,app.height,fill='black')
 
+# draws the canvas area
 def drawCanvas(app, canvas):
     canvas.create_rectangle(app.margin,app.margin,
                             2*app.width/3-app.margin,
                             app.height-app.margin,fill='bisque2')
 
+# draws a button given a button object
 def drawButton(canvas, button):
     name = button.getName()
     (x,y) = button.getCenter()
@@ -482,8 +488,9 @@ def drawButton(canvas, button):
                        fill=color, outline=color)
     canvas.create_oval(cx3 - r, cy3 - r, cx3 + r, cy3 + r,
                        fill=color, outline=color)
-    canvas.create_text(x, y, text=name, font='Arial 10 bold', fill='black')
+    canvas.create_text(x, y, text=name, font='Copperplate 11 bold', fill='black')
 
+# draws a slider given slider object
 def drawSlider(canvas, slider):
     (x,y) = slider.getCenter()
     sWidth = slider.w
@@ -492,7 +499,7 @@ def drawSlider(canvas, slider):
     color = slider.getColor()
     name = slider.getName()
     namelen = len(name)
-    canvas.create_text(x - sWidth - namelen*6, y, text=name, font='Helvetica 15')
+    canvas.create_text(x - sWidth - namelen*7, y, text=name, font='Courier 15')
     canvas.create_line(x - sWidth, y,
                        x + sWidth, y,
                        fill = 'black', width = 3)

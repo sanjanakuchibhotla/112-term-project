@@ -2,7 +2,7 @@ import math
 
 # floodfills image based on similarity value between pixels
 def floodfill(arr, startRow, startCol, new, similarityVal):
-    possible = [] # list of possible next pixels
+    possible = [] # list of next pixels
     old = arr[startRow][startCol]
     seen = set() # set of pixels already checked
     possible.append((startRow, startCol))
